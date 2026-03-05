@@ -817,7 +817,7 @@
   <div class="card" style="animation-delay:0.3s">
     <div class="card-label">
       <span class="icon icon-orange">🍽️</span>
-      How You Want Eat?
+      How You Wan Eat?
     </div>
     <div class="meal-type-grid">
       <button class="meal-type-btn" data-type="cook" onclick="selectMealType(this)">
@@ -835,7 +835,240 @@
     </div>
   </div>
 
-  <!-- API KEY CARD -->
-  <div class="card" style="animation-delay:0.35s">
-    <div class="card-label">
-      <span class="ico
+  
+  <!-- ACTION BUTTONS -->
+  <div style="animation: fadeUp 0.5s 0.4s ease both; opacity:0; animation-fill-mode:both">
+    <button class="btn-primary" onclick="findMeal()">
+      🔍 Find My Meal
+    </button>
+    <button class="btn-surprise" onclick="surpriseMe()">
+      🎲 Surprise Me (under ₦1000)
+    </button>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading-section" id="loadingSection">
+    <span class="loading-pot">🫕</span>
+    <div class="loading-msg" id="loadingMsg">Asking mama put...</div>
+    <div class="loading-sub">She dey cook something for you</div>
+    <div class="loading-dots">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-section" id="resultsSection">
+    <div class="results-header">Today's Recommendations</div>
+    <div id="resultsContainer"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="naija-strip">
+    <span class="flag-ng">🇳🇬</span>
+    Made with love for Lagos students
+    <span>• Chop Well v1.0</span>
+  </div>
+
+</div>
+
+<script>
+let selectedType = 'both';
+
+
+
+// ─── BUDGET SLIDER ───
+const slider = document.getElementById('budgetSlider');
+const budgetVal = document.getElementById('budgetVal');
+const sliderFill = document.getElementById('sliderFill');
+const budgetTier = document.getElementById('budgetTier');
+
+function updateSlider() {
+  const min = +slider.min, max = +slider.max, val = +slider.value;
+  const pct = ((val - min) / (max - min)) * 100;
+  sliderFill.style.width = pct + '%';
+  budgetVal.textContent = val.toLocaleString();
+
+  if (val <= 500) {
+    budgetTier.textContent = '😤 Broke Mode — We Go Manage';
+  } else if (val <= 1000) {
+    budgetTier.textContent = '🍛 Standard Chop Budget';
+  } else if (val <= 2000) {
+    budgetTier.textContent = '😎 Comfortable Abi';
+  } else if (val <= 3500) {
+    budgetTier.textContent = '💪 Living Your Best Life';
+  } else {
+    budgetTier.textContent = '👑 Big Boy / Big Girl Energy';
+  }
+}
+
+slider.addEventListener('input', updateSlider);
+
+// ─── MEAL TYPE SELECT ───
+function selectMealType(btn) {
+  document.querySelectorAll('.meal-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedType = btn.dataset.type;
+}
+
+// ─── LOADING MESSAGES ───
+const loadingMessages = [
+  "Asking mama put...",
+  "Checking Balogun market prices...",
+  "Consulting my aunty for recipe...",
+  "Negotiating with the iya basira...",
+  "Calculating ALAT balance...",
+  "Asking the food vendor abeg...",
+  "Scanning Agbado market...",
+  "Calling my plug for ingredients...",
+  "Tasting the soup first...",
+  "Waiting for NEPA to restore light...",
+];
+
+let loadingInterval;
+
+function startLoading() {
+  const section = document.getElementById('loadingSection');
+  const msg = document.getElementById('loadingMsg');
+  section.classList.add('visible');
+  let i = 0;
+  msg.textContent = loadingMessages[0];
+  loadingInterval = setInterval(() => {
+    i = (i + 1) % loadingMessages.length;
+    msg.style.opacity = '0';
+    setTimeout(() => {
+      msg.textContent = loadingMessages[i];
+      msg.style.opacity = '1';
+    }, 200);
+  }, 1800);
+}
+
+function stopLoading() {
+  clearInterval(loadingInterval);
+  document.getElementById('loadingSection').classList.remove('visible');
+}
+
+// ─── RENDER MEALS ───
+function renderMeals(text) {
+  const container = document.getElementById('resultsContainer');
+  container.innerHTML = '';
+
+  // Try to parse JSON from the AI response
+  let meals = [];
+  try {
+    const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/) ||
+                      text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+    const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : text;
+    meals = JSON.parse(jsonStr);
+  } catch (e) {
+    // fallback: show raw text in a card
+    container.innerHTML = `<div class="meal-card"><p style="color:var(--text-dim);font-size:14px;line-height:1.7;">${text.replace(/\n/g,'<br>')}</p></div>`;
+    return;
+  }
+
+  meals.forEach((meal, idx) => {
+    const isCooked = meal.type === 'cook';
+    const card = document.createElement('div');
+    card.className = 'meal-card';
+    card.style.animationDelay = (idx * 0.12) + 's';
+
+    const stepsHtml = (meal.steps || []).map((step, i) =>
+      `<li><span class="step-num">${i+1}</span>${step}</li>`
+    ).join('');
+
+    const extraHtml = (meal.extra_ingredients || []).map(ing =>
+      `<span class="ingredient-chip new">+ ${ing}</span>`
+    ).join('') || `<span class="ingredient-chip">Nothing extra needed! 🎉</span>`;
+
+    card.innerHTML = `
+      <div class="meal-top">
+        <div class="meal-info">
+          <span class="meal-emoji-big">${meal.emoji || '🍲'}</span>
+          <div class="meal-name">${meal.name}</div>
+          <span class="meal-type-tag ${isCooked ? 'tag-cook' : 'tag-buy'}">
+            ${isCooked ? '🍳 Cook at Home' : '🏪 Buy Outside'}
+          </span>
+        </div>
+        <div class="meal-price-wrap">
+          <div class="meal-price">₦${Number(meal.cost).toLocaleString()}</div>
+          <div class="meal-price-label">estimated</div>
+        </div>
+      </div>
+      <div class="meal-divider"></div>
+      <div class="meal-section-title"><span class="dot-small"></span>${isCooked ? 'How to Cook' : 'Where to Buy / What to Order'}</div>
+      <ul class="steps-list">${stepsHtml}</ul>
+      <div class="meal-divider"></div>
+      <div class="meal-section-title"><span class="dot-small"></span>Extra Ingredients Needed</div>
+      <div class="extra-ingredients">${extraHtml}</div>
+    `;
+    container.appendChild(card);
+  });
+
+  document.getElementById('resultsSection').classList.add('visible');
+}
+
+// ─── API CALL ───
+async function callAI(prompt) {
+  const response = await fetch('/api/meal', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt })
+  });
+
+  const data = await response.json();
+  if (data.error) throw new Error(data.error);
+  return data.result;
+}
+
+// ─── FIND MEAL ───
+async function findMeal() {
+  const budget = slider.value;
+  const ingredients = document.getElementById('ingredientsInput').value.trim();
+  const mealTypeMap = { cook: 'cook at home', buy: 'buy outside', both: 'both cook at home or buy outside' };
+  const mealTypeTxt = mealTypeMap[selectedType];
+
+  const prompt = `I'm a Lagos student with a budget of ₦${budget}. I want to ${mealTypeTxt}.
+${ingredients ? `I have these ingredients: ${ingredients}.` : 'I have no ingredients at home.'}
+Suggest realistic Nigerian meal options within my budget. Be practical about Lagos market prices.`;
+
+  document.getElementById('resultsSection').classList.remove('visible');
+  startLoading();
+
+  try {
+    const result = await callAI(prompt);
+    stopLoading();
+    renderMeals(result);
+  } catch (err) {
+    stopLoading();
+    document.getElementById('resultsSection').classList.add('visible');
+    document.getElementById('resultsContainer').innerHTML =
+      `<div class="error-card">😅 E be like network dey misbehave. Try again abeg!<br><small>${err.message}</small></div>`;
+  }
+}
+
+// ─── SURPRISE ME ───
+async function surpriseMe() {
+  const surprisePrompt = `I'm a Lagos student. Surprise me with ONE random Nigerian meal or snack that costs under ₦1000. It should be something fun and unexpected — could be street food, market food, or something easy to cook. Pick something different each time!`;
+
+  document.getElementById('resultsSection').classList.remove('visible');
+
+  // Set slider to dramatic random position
+  const randomBudget = Math.floor(Math.random() * 800) + 200;
+  slider.value = randomBudget;
+  updateSlider();
+
+  startLoading();
+
+  try {
+    const result = await callAI(surprisePrompt);
+    stopLoading();
+    renderMeals(result);
+  } catch (err) {
+    stopLoading();
+    document.getElementById('resultsSection').classList.add('visible');
+    document.getElementById('resultsContainer').innerHTML =
+      `<div class="error-card">😅 Surprise spoil! Network wan ruin the vibe. Try again abeg!</div>`;
+  }
+}
+</script>
+</body>
+</html>
