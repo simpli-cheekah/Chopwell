@@ -1013,7 +1013,6 @@ async function callAI(prompt) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prompt })
   });
-
   const data = await response.json();
   if (data.error) throw new Error(data.error);
   return data.result;
