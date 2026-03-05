@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chop Well 🍲 — Your Lagos Food Companion</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0f;
+    --surface: #161618;
+    --surface2: #1e1e21;
+    --surface3: #252529;
+    --orange: #ff6b1a;
+    --orange-dim: #c94e0d;
+    --orange-glow: rgba(255,107,26,0.15);
+    --green: #3ddc84;
+    --green-dim: #2ab368;
+    --green-glow: rgba(61,220,132,0.12);
+    --text: #f0ede8;
+    --text-muted: #7a7880;
+    --text-dim: #a09ea8;
+    --border: rgba(255,255,255,0.07);
+    --border-active: rgba(255,107,26,0.4);
+    --radius: 20px;
+    --radius-sm: 12px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.6;
+  }
+
+  /* Ambient glow blobs */
+  .ambient {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .ambient-1 {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(255,107,26,0.08) 0%, transparent 70%);
+    top: -100px; right: -100px;
+    animation: drift1 8s ease-in-out infinite;
+  }
+  .ambient-2 {
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(61,220,132,0.06) 0%, transparent 70%);
+    bottom: 200px; left: -80px;
+    animation: drift2 10s ease-in-out infinite;
+  }
+
+  @keyframes drift1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-20px,30px)} }
+  @keyframes drift2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(20px,-20px)} }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 20px 120px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    padding: 48px 0 32px;
+    text-align: center;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  .logo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 16px 6px 8px;
+    margin-bottom: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dim);
+    letter-spacing: 0.04em;
+  }
+
+  .logo-badge .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: pulse 2s ease infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(40px, 11vw, 56px);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+
+  h1 .chop { color: var(--text); }
+  h1 .well {
+    color: var(--orange);
+    display: inline-block;
+    position: relative;
+  }
+
+  h1 .well::after {
+    content: '';
+    position: absolute;
+    bottom: 2px; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--orange), transparent);
+    border-radius: 2px;
+  }
+
+  .tagline {
+    font-size: 15px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    font-style: italic;
+    max-width: 280px;
+    margin: 0 auto;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 16px;
+    animation: fadeUp 0.5s ease both;
+    transition: border-color 0.3s;
+  }
+
+  .card:hover { border-color: rgba(255,255,255,0.12); }
+
+  .card-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-label .icon {
+    width: 24px; height: 24px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+  }
+
+  .icon-orange { background: var(--orange-glow); }
+  .icon-green { background: var(--green-glow); }
+
+  /* ── BUDGET SLIDER ── */
+  .budget-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 20px;
+  }
+
+  .budget-amount {
+    font-family: 'Syne', sans-serif;
+    font-size: 42px;
+    font-weight: 800;
+    color: var(--orange);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    transition: all 0.2s;
+  }
+
+  .budget-currency {
+    font-size: 22px;
+    font-weight: 600;
+    vertical-align: top;
+    margin-top: 6px;
+    display: inline-block;
+  }
+
+  .budget-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .slider-wrap {
+    position: relative;
+    padding: 8px 0;
+  }
+
+  .slider-track {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--surface3);
+    position: relative;
+    overflow: visible;
+  }
+
+  .slider-fill {
+    position: absolute;
+    height: 100%;
+    left: 0;
+    background: linear-gradient(90deg, var(--orange-dim), var(--orange));
+    border-radius: 3px;
+    transition: width 0.1s;
+    box-shadow: 0 0 12px var(--orange-glow);
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    background: transparent;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--orange);
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--orange), 0 4px 12px rgba(255,107,26,0.4);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  input[type=range]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 1px var(--orange), 0 4px 20px rgba(255,107,26,0.6);
+  }
+
+  .slider-markers {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+  }
+
+  .slider-markers span {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'Syne', sans-serif;
+  }
+
+  .budget-tier {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--orange-glow);
+    border: 1px solid rgba(255,107,26,0.2);
+    border-radius: 100px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: var(--orange);
+    font-weight: 500;
+    margin-top: 12px;
+    transition: all 0.3s;
+  }
+
+  /* ── INGREDIENTS ── */
+  .ingredient-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    outline: none;
+    resize: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    min-height: 90px;
+  }
+
+  .ingredient-input::placeholder { color: var(--text-muted); }
+
+  .ingredient-input:focus {
+    border-color: var(--border-active);
+    box-shadow: 0 0 0 3px rgba(255,107,26,0.08);
+  }
+
+  .ingredient-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  /* ── MEAL TYPE ── */
+  .meal-type-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .meal-type-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 8px;
+    color: var(--text-dim);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.3;
+  }
+
+  .meal-type-btn .meal-emoji { font-size: 22px; }
+
+  .meal-type-btn:hover {
+    border-color: rgba(255,107,26,0.3);
+    background: var(--surface3);
+    color: var(--text);
+    transform: translateY(-2px);
+  }
+
+  .meal-type-btn.active {
+    background: linear-gradient(135deg, rgba(255,107,26,0.15), rgba(255,107,26,0.05));
+    border-color: var(--orange);
+    color: var(--orange);
+    box-shadow: 0 4px 20px rgba(255,107,26,0.15);
+    transform: translateY(-2px);
+  }
+
+  /* ── BUTTONS ── */
+  .btn-primary {
+    width: 100%;
+    background: linear-gradient(135deg, var(--orange), var(--orange-dim));
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 18px;
+    color: white;
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(255,107,26,0.3);
+  }
+
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+
+  .btn-primary:hover::before { opacity: 1; }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(255,107,26,0.4);
+  }
+
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-surprise {
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 15px;
+    color: var(--text-dim);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .btn-surprise:hover {
+    border-color: var(--green);
+    color: var(--green);
+    background: var(--green-glow);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(61,220,132,0.15);
+  }
+
+  /* ── LOADING ── */
+  .loading-section {
+    display: none;
+    text-align: center;
+    padding: 48px 24px;
+    animation: fadeUp 0.4s ease;
+  }
+
+  .loading-section.visible { display: block; }
+
+  .loading-pot {
+    font-size: 56px;
+    display: block;
+    margin-bottom: 20px;
+    animation: wobble 0.8s ease-in-out infinite;
+  }
+
+  @keyframes wobble {
+    0%,100%{transform:rotate(-5deg) scale(1)}
+    50%{transform:rotate(5deg) scale(1.1)}
+  }
+
+  .loading-msg {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+    min-height: 28px;
+    transition: all 0.3s;
+  }
+
+  .loading-sub {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .loading-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 24px;
+  }
+
+  .loading-dots span {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--orange);
+    animation: dotBounce 1.2s ease-in-out infinite;
+  }
+
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; background: var(--green); }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes dotBounce {
+    0%,100%{transform:translateY(0);opacity:0.4}
+    50%{transform:translateY(-10px);opacity:1}
+  }
+
+  /* ── RESULTS ── */
+  .results-section {
+    display: none;
+    animation: fadeUp 0.5s ease;
+  }
+
+  .results-section.visible { display: block; }
+
+  .results-header {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .results-header::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .meal-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 14px;
+    animation: slideIn 0.5s ease both;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+
+  .meal-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--orange), var(--green));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .meal-card:hover {
+    border-color: rgba(255,107,26,0.25);
+    transform: translateY(-3px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+  }
+
+  .meal-card:hover::before { opacity: 1; }
+
+  @keyframes slideIn {
+    from { opacity:0; transform:translateY(20px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  .meal-card:nth-child(2) { animation-delay: 0.1s; }
+  .meal-card:nth-child(3) { animation-delay: 0.2s; }
+
+  .meal-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .meal-info { flex: 1; }
+
+  .meal-emoji-big {
+    font-size: 40px;
+    line-height: 1;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .meal-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.2;
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+  }
+
+  .meal-type-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 100px;
+  }
+
+  .tag-cook {
+    background: rgba(61,220,132,0.12);
+    color: var(--green);
+    border: 1px solid rgba(61,220,132,0.2);
+  }
+
+  .tag-buy {
+    background: rgba(255,107,26,0.12);
+    color: var(--orange);
+    border: 1px solid rgba(255,107,26,0.2);
+  }
+
+  .meal-price-wrap {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .meal-price {
+    font-family: 'Syne', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--orange);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .meal-price-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .meal-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 16px 0;
+  }
+
+  .meal-section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .meal-section-title .dot-small {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--orange);
+    flex-shrink: 0;
+  }
+
+  .steps-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .steps-list li {
+    display: flex;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    align-items: flex-start;
+  }
+
+  .step-num {
+    min-width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--orange);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .extra-ingredients {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .ingredient-chip {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .ingredient-chip.new {
+    background: rgba(255,107,26,0.08);
+    border-color: rgba(255,107,26,0.2);
+    color: var(--orange);
+  }
+
+  /* ── NAIJA VIBES FOOTER ── */
+  .naija-strip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .flag-ng {
+    display: inline-flex;
+    gap: 2px;
+    font-size: 16px;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeDown {
+    from { opacity:0; transform:translateY(-20px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(24px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  .card:nth-child(2) { animation-delay: 0.1s; }
+  .card:nth-child(3) { animation-delay: 0.2s; }
+  .card:nth-child(4) { animation-delay: 0.3s; }
+  .card:nth-child(5) { animation-delay: 0.4s; }
+
+  /* ── ERROR STATE ── */
+  .error-card {
+    background: rgba(255,59,48,0.08);
+    border: 1px solid rgba(255,59,48,0.2);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    color: #ff6b6b;
+    font-size: 14px;
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="ambient ambient-1"></div>
+<div class="ambient ambient-2"></div>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-badge">
+      <span class="dot"></span>
+      Lagos Student Edition 🌍
+    </div>
+    <h1><span class="chop">Chop </span><span class="well">Well</span></h1>
+    <p class="tagline">Your pocket-friendly food guide for Lagos students — no hunger allowed!</p>
+  </div>
+
+  <!-- BUDGET CARD -->
+  <div class="card" style="animation-delay:0.1s">
+    <div class="card-label">
+      <span class="icon icon-orange">💰</span>
+      Your Budget
+    </div>
+    <div class="budget-display">
+      <div class="budget-amount"><span class="budget-currency">₦</span><span id="budgetVal">1000</span></div>
+      <div class="budget-label">How much you<br>wan spend?</div>
+    </div>
+    <div class="slider-wrap">
+      <div class="slider-track">
+        <div class="slider-fill" id="sliderFill" style="width:16.8%"></div>
+      </div>
+      <input type="range" id="budgetSlider" min="200" max="5000" value="1000" step="50">
+    </div>
+    <div class="slider-markers">
+      <span>₦200</span>
+      <span>₦1,000</span>
+      <span>₦2,500</span>
+      <span>₦5,000</span>
+    </div>
+    <div class="budget-tier" id="budgetTier">🍛 Standard Chop Budget</div>
+  </div>
+
+  <!-- INGREDIENTS CARD -->
+  <div class="card" style="animation-delay:0.2s">
+    <div class="card-label">
+      <span class="icon icon-green">🧅</span>
+      Available Ingredients
+    </div>
+    <textarea class="ingredient-input" id="ingredientsInput"
+      placeholder="Type what you have at home e.g. tomatoes, onions, rice, palm oil, eggs..."></textarea>
+    <p class="ingredient-hint">💡 Leave empty if you no get anything — we go still find you something to chop!</p>
+  </div>
+
+  <!-- MEAL TYPE CARD -->
+  <div class="card" style="animation-delay:0.3s">
+    <div class="card-label">
+      <span class="icon icon-orange">🍽️</span>
+      How You Want Eat?
+    </div>
+    <div class="meal-type-grid">
+      <button class="meal-type-btn" data-type="cook" onclick="selectMealType(this)">
+        <span class="meal-emoji">🍳</span>
+        Cook at Home
+      </button>
+      <button class="meal-type-btn" data-type="buy" onclick="selectMealType(this)">
+        <span class="meal-emoji">🏪</span>
+        Buy Outside
+      </button>
+      <button class="meal-type-btn active" data-type="both" onclick="selectMealType(this)">
+        <span class="meal-emoji">🤝</span>
+        Both Sef
+      </button>
+    </div>
+  </div>
+
+  <!-- API KEY CARD -->
+  <div class="card" style="animation-delay:0.35s">
+    <div class="card-label">
+      <span class="ico
